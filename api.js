@@ -238,19 +238,38 @@ async function computeSummaryFromLocal() {
       continue;
     }
 
-    toCollectCount++;
     if (c.dueDate) {
-      const due = new Date(c.dueDate);
-      due.setHours(0, 0, 0, 0);
-      if (due.getTime() === today.getTime()) dueToday++;
-      else if (due > today && due <= new Date(today.getTime() + DUE_SOON_DAYS * 86400000)) dueSoon++;
-      else if (due < today) pastDue++;
+      const due = new Date(c.dueDate + 'T00:00:00');
+      if (!isNaN(due.getTime())) {
+        due.setHours(0, 0, 0, 0);
+
+        // Get first day of the month when due date falls
+        const dueMonthStart = new Date(due.getFullYear(), due.getMonth(), 1);
+        dueMonthStart.setHours(0, 0, 0, 0);
+
+        if (due < today) {
+          pastDue++;
+          toCollectCount++;
+        } else if (due.getTime() === today.getTime()) {
+          dueToday++;
+          toCollectCount++;
+        } else if (due <= new Date(today.getTime() + DUE_SOON_DAYS * 86400000)) {
+          dueSoon++;
+          // Check if we're already in the due month
+          if (today >= dueMonthStart) {
+            toCollectCount++;
+          }
+        } else {
+          // Future due date - only count in toCollect if we're in the due month
+          if (today >= dueMonthStart) {
+            toCollectCount++;
+          }
+        }
+      }
     }
   }
 
-  const collectionRate = totalClients > 0 ? Math.round((paidCount / totalClients) * 100) : 0;
-
-  return { dueToday, dueSoon, pastDue, totalCollected, paidCount, toCollectCount, totalClients, collectionRate };
+  return { dueToday, dueSoon, pastDue, totalCollected, paidCount, toCollectCount, totalClients };
 }
 
 // ---- Search/filter from local DB ----
