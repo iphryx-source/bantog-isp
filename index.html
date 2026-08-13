@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1a73e8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Bantog ISP — Collector Panel</title>
+<style>
+  * { box-sizing: border-box; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  body { margin: 0; padding: 12px; padding-bottom: 80px; background: #f4f5f7; color: #222; }
+
+  /* ===== Top Bar ===== */
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .topbar h1 { font-size: 17px; margin: 0; }
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 20px; background: #e8eaed; color: #555;
+  }
+  .status-pill.online { background: #d9ead3; color: #274e13; }
+  .status-pill.offline { background: #f4cccc; color: #990000; }
+  .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .status-pill.syncing { background: #fff2cc; color: #7f6000; }
+
+  .pending-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #ea4335; color: white; font-size: 10px; font-weight: 700;
+    min-width: 18px; height: 18px; border-radius: 9px; padding: 0 5px;
+    margin-left: 4px; cursor: pointer;
+  }
+
+  /* ===== Cards ===== */
+  .cards { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .card { background: white; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card .num { font-size: 22px; font-weight: 700; }
+  .card .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  /* ===== Sections ===== */
+  .section { background: white; border-radius: 10px; padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .section-title {
+    font-size: 16px; font-weight: 700; text-align: center;
+    color: #ffffff; padding: 12px 14px; margin: -14px -14px 14px -14px;
+    border-radius: 10px 10px 0 0; letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .title-add { background: #34a853; }
+  .title-search { background: #1a73e8; }
+  .title-sync { background: #f9ab00; color: #333 !important; }
+
+  .sub-label { font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 4px; }
+  .hint { font-size: 11px; color: #aaa; margin: -4px 0 8px; }
+
+  /* ===== Form Elements ===== */
+  input, select, button, textarea {
+    width: 100%; padding: 10px; margin-bottom: 8px;
+    border-radius: 8px; border: 1px solid #ddd; font-size: 14px; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+  }
+  button { background: #1a73e8; color: white; border: none; font-weight: 600; cursor: pointer; margin-bottom: 0; }
+  button:active { background: #1558b0; }
+  button.secondary { background: #e8eaed; color: #333; }
+  button.secondary:active { background: #d2d4d7; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .search-row { display: flex; gap: 6px; }
+  .search-row input, .search-row select { margin-bottom: 0; flex: 1; }
+  .search-row button { width: auto; padding: 10px 16px; white-space: nowrap; }
+
+  .clear-bar {
+    width: 100%; padding: 12px; margin-top: 12px; border-radius: 8px; border: none;
+    background: #ea4335; color: #ffffff; font-weight: 700; font-size: 13px;
+    letter-spacing: 0.5px; text-align: center; cursor: pointer;
+  }
+  .clear-bar:active { background: #c5221f; }
+
+  /* ===== Result Cards ===== */
+  .result-card { border: 1px solid #e8eaed; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .result-card.pending { border-left: 4px solid #f9ab00; }
+  .result-card .rc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .result-card .rc-name { font-weight: 600; font-size: 15px; color: #1a1a1a; }
+  .result-card .rc-username { font-size: 12px; color: #1a73e8; margin-top: 1px; }
+  .result-card .rc-meta { font-size: 12px; color: #666; margin: 3px 0; }
+  .result-card .rc-notes { font-size: 11px; color: #999; font-style: italic; margin-top: 4px; }
+  .result-card .rc-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .result-card .rc-actions input, .result-card .rc-actions select { margin-bottom: 0; }
+  .result-card .rc-actions button { padding: 6px 10px; font-size: 12px; margin-bottom: 0; flex: 1; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-PAST-DUE { background: #f4cccc; color: #990000; }
+  .badge-DUE-TODAY { background: #d9ead3; color: #274e13; }
+  .badge-DUE-SOON { background: #fff2cc; color: #7f6000; }
+  .badge-PAID { background: #cfe2f3; color: #073763; }
+  .badge-PAID-TODAY { background: #d9ead3; color: #274e13; }
+  .badge-UPCOMING { background: #e8f0fe; color: #1a73e8; }
+  .badge-NO-DUE-DATE { background: #e0e0e0; color: #555; }
+
+  .msg { padding: 8px 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+  .msg.success { background: #d9ead3; color: #274e13; }
+  .msg.error { background: #f4cccc; color: #990000; }
+  .msg.info { background: #e8f0fe; color: #1a73e8; }
+  .msg.warning { background: #fff2cc; color: #7f6000; }
+  .loading { color: #999; font-size: 13px; }
+
+  /* ===== Modals ===== */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+  .modal-overlay.active { display: flex; align-items: flex-start; justify-content: center; padding-top: 40px; }
+  .modal { background: white; border-radius: 12px; padding: 20px; max-width: 440px; width: 92%; box-shadow: 0 8px 30px rgba(0,0,0,0.3); max-height: 85vh; overflow-y: auto; }
+  .modal h2 { margin: 0 0 14px; font-size: 16px; }
+  .modal .close-btn { float: right; background: none; border: none; font-size: 22px; cursor: pointer; color: #999; padding: 0 4px; line-height: 1; }
+  .modal .close-btn:hover { color: #333; }
+  .modal input, .modal select, .modal textarea { margin-bottom: 10px; }
+  .modal textarea { resize: vertical; min-height: 60px; }
+  .modal .modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .modal .modal-actions button { flex: 1; padding: 10px; margin-bottom: 0; }
+
+  .pay-confirm-text { text-align: center; font-size: 14px; color: #444; line-height: 1.6; margin: 0 0 4px; }
+
+  /* ===== Bottom Bar ===== */
+  .bottombar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; border-top: 1px solid #e0e0e0;
+    padding: 8px 16px; display: flex; justify-content: space-between; align-items: center;
+    z-index: 100; font-size: 11px; color: #888;
+  }
+  .bottombar button {
+    width: auto; padding: 6px 14px; font-size: 12px; margin: 0;
+  }
+
+  /* ===== Install Banner ===== */
+  .install-banner {
+    display: none; background: #e8f0fe; border: 1px solid #c6d9f5;
+    border-radius: 10px; padding: 12px; margin-bottom: 14px;
+    text-align: center; font-size: 13px;
+  }
+  .install-banner button { width: auto; padding: 8px 20px; margin-top: 8px; }
+  .install-banner.show { display: block; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+    background: #333; color: white; padding: 10px 20px; border-radius: 24px;
+    font-size: 13px; z-index: 2000; display: none; white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .toast.show { display: block; animation: fadeInUp 0.3s ease; }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <h1>📡 Bantog ISP</h1>
+  <div class="status-pill" id="statusPill" onclick="manualSync()">
+    <span class="dot"></span>
+    <span id="statusText">Checking...</span>
+    <span class="pending-badge" id="pendingBadge" style="display:none;">0</span>
+  </div>
+</div>
+
+<!-- Install Banner -->
+<div class="install-banner" id="installBanner">
+  📲 <b>Install this app</b> for faster access &amp; offline use!
+  <br>
+  <button onclick="installApp()">Install Now</button>
+  <button class="secondary" onclick="dismissInstall()" style="margin-left:6px;">Later</button>
+</div>
+
+<!-- Cards -->
+<div class="cards">
+  <div class="card"><div class="num" id="cDueToday">-</div><div class="label">Due Today</div></div>
+  <div class="card"><div class="num" id="cDueSoon">-</div><div class="label">Due Soon</div></div>
+  <div class="card"><div class="num" id="cPastDue">-</div><div class="label">Past Due</div></div>
+  <div class="card"><div class="num" id="cTotal">-</div><div class="label">Collected</div></div>
+</div>
+
+<!-- Add Client -->
+<div class="section">
+  <h2 class="section-title title-add">➕ Add New Client</h2>
+  <div id="addMsg"></div>
+  <input id="firstName" placeholder="First Name">
+  <input id="lastName" placeholder="Last Name">
+  <input id="username" placeholder="Username (e.g. B.RAFAELCORPUZ)">
+  <input id="dueDate" type="date">
+  <button onclick="submitClient()">Add Client</button>
+</div>
+
+<!-- Search & Filter -->
+<div class="section">
+  <h2 class="section-title title-search">🔍 Search &amp; Filter</h2>
+
+  <div class="sub-label">By Name or Username</div>
+  <div class="hint">Type at least 1 character — matches first name, last name, or username</div>
+  <div class="search-row">
+    <input id="searchQuery" placeholder="e.g. SIENNA or B.RAFAELCORPUZ">
+    <button onclick="doNameSearch()">Search</button>
+  </div>
+
+  <div class="sub-label">By Status</div>
+  <div class="search-row">
+    <select id="filterStatus">
+      <option value="ALL">All (unpaid)</option>
+      <option value="PAID">All (paid)</option>
+      <option value="DUE TODAY">Due Today</option>
+      <option value="DUE SOON">Due Soon</option>
+      <option value="PAST DUE">Past Due</option>
+      <option value="PAID TODAY">Paid Today</option>
+    </select>
+    <button onclick="doStatusSearch()">Filter</button>
+  </div>
+
+  <button class="clear-bar" onclick="clearResults()">✖ CLEAR RESULTS</button>
+
+  <div id="results" style="margin-top:12px;"></div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <button class="close-btn" onclick="closeEditModal()">&times;</button>
+    <h2>✏️ Edit Client</h2>
+    <div id="editMsg"></div>
+    <input id="editUsername" type="text" placeholder="Username" disabled>
+    <input id="editFirstName" placeholder="First Name">
+    <input id="editLastName" placeholder="Last Name">
+    <input id="editDueDate" type="date">
+    <textarea id="editNotes" placeholder="Notes (optional)"></textarea>
+    <div class="modal-actions">
+      <button onclick="saveEdit()">Save Changes</button>
+      <button class="secondary" onclick="closeEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pay Confirmation Modal -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <h2 style="text-align:center;">💰 Confirm Payment</h2>
+    <p class="pay-confirm-text" id="payConfirmText"></p>
+    <div class="modal-actions">
+      <button onclick="confirmPay()">Yes, Mark as Paid</button>
+      <button class="secondary" onclick="closePayModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Bottom Bar -->
+<div class="bottombar">
+  <span id="lastSyncText">Last sync: never</span>
+  <button class="secondary" onclick="manualSync()" id="syncBtn">🔄 Sync</button>
+</div>
+
+<script src="api.js"></script>
+<script>
+  // ==================== App State ====================
+  let currentEditUsername = '';
+  let pendingPay = null;
+  let deferredPrompt = null;
+
+  // ==================== PWA Install ====================
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBanner').classList.add('show');
+  });
+
+  function installApp() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choice) => {
+        if (choice.outcome === 'accepted') showToast('App installed!');
+        deferredPrompt = null;
+        dismissInstall();
+      });
+    }
+  }
+
+  function dismissInstall() {
+    document.getElementById('installBanner').classList.remove('show');
+  }
+
+  // ==================== Service Worker ====================
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.error('SW registration failed:', err));
+  }
+
+  // ==================== Online/Offline Detection ====================
+  function updateOnlineStatus() {
+    const pill = document.getElementById('statusPill');
+    const text = document.getElementById('statusText');
+
+    if (navigator.onLine) {
+      pill.className = 'status-pill online';
+      text.textContent = 'Online';
+    } else {
+      pill.className = 'status-pill offline';
+      text.textContent = 'Offline';
+    }
+    updatePendingBadge();
+  }
+
+  async function updatePendingBadge() {
+    try {
+      const status = await getSyncStatus();
+      const badge = document.getElementById('pendingBadge');
+      if (status.pendingCount > 0) {
+        badge.textContent = status.pendingCount;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+
+      const lastSyncText = document.getElementById('lastSyncText');
+      if (status.lastSync) {
+        const d = new Date(status.lastSync);
+        lastSyncText.textContent = 'Last sync: ' + d.toLocaleTimeString();
+      }
+    } catch (err) {
+      console.error('Status update error:', err);
+    }
+  }
+
+  window.addEventListener('online', () => {
+    updateOnlineStatus();
+    showToast('Back online! Syncing...');
+    manualSync();
+  });
+
+  window.addEventListener('offline', () => {
+    updateOnlineStatus();
+    showToast('You are offline. Changes will sync later.');
+  });
+
+  // ==================== Toast ====================
+  function showToast(msg, duration = 2500) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  // ==================== Sync ====================
+  async function manualSync() {
+    const btn = document.getElementById('syncBtn');
+    const pill = document.getElementById('statusPill');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Syncing...';
+    pill.className = 'status-pill syncing';
+    document.getElementById('statusText').textContent = 'Syncing...';
+
+    try {
+      const result = await fullSync();
+      let msg = 'Sync complete!';
+      if (result.synced > 0) msg = result.synced + ' action(s) synced!';
+      showToast(msg);
+      loadSummary();
+    } catch (err) {
+      showToast('Sync failed: ' + err.message);
+    }
+
+    btn.disabled = false;
+    btn.textContent = '🔄 Sync';
+    updateOnlineStatus();
+  }
+
+  // ==================== Summary ====================
+  async function loadSummary() {
+    try {
+      const d = await getSummary();
+      document.getElementById('cDueToday').innerText = d.dueToday || 0;
+      document.getElementById('cDueSoon').innerText = d.dueSoon || 0;
+      document.getElementById('cPastDue').innerText = d.pastDue || 0;
+      document.getElementById('cTotal').innerText = '₱' + Number(d.totalCollected || 0).toLocaleString();
+    } catch (err) {
+      console.error('Summary error:', err);
+    }
+  }
+
+  // ==================== Add Client ====================
+  async function submitClient() {
+    const fn = document.getElementById('firstName').value.trim();
+    const ln = document.getElementById('lastName').value.trim();
+    const un = document.getElementById('username').value.trim();
+    const due = document.getElementById('dueDate').value;
+    const msgBox = document.getElementById('addMsg');
+
+    if (!fn || !ln || !un || !due) {
+      msgBox.innerHTML = '<div class="msg error">All fields are required.</div>';
+      return;
+    }
+
+    msgBox.innerHTML = '<div class="msg info">Saving...</div>';
+
+    try {
+      const res = await addClient(fn, ln, un, due);
+      const cls = res.success ? 'success' : 'error';
+      if (res.message.includes('offline')) {
+        msgBox.innerHTML = '<div class="msg warning">' + esc(res.message) + '</div>';
+      } else {
+        msgBox.innerHTML = '<div class="msg ' + cls + '">' + esc(res.message) + '</div>';
+      }
+      if (res.success) {
+        document.getElementById('firstName').value = '';
+        document.getElementById('lastName').value = '';
+        document.getElementById('username').value = '';
+        document.getElementById('dueDate').value = '';
+        loadSummary();
+        updatePendingBadge();
+      }
+    } catch (err) {
+      msgBox.innerHTML = '<div class="msg error">' + esc(err.message) + '</div>';
+    }
+  }
+
+  // ==================== Search ====================
+  async function doNameSearch() {
+    const q = document.getElementById('searchQuery').value.trim();
+    if (q.length < 1) { alert('Type at least 1 character.'); return; }
+    document.getElementById('results').innerHTML = '<p class="loading">Searching for "' + esc(q) + '"...</p>';
+    try {
+      const results = await searchByName(q);
+      renderResults(results);
+    } catch (err) {
+      document.getElementById('results').innerHTML = '<p class="msg error">Error: ' + esc(err.message) + '</p>';
+    }
+  }
+
+  async function doStatusSearch() {
+    const status = document.getElementById('filterStatus').value;
+    document.getElementById('results').innerHTML = '<p class="loading">Filtering: ' + esc(status) + '...</p>';
+    try {
+      const results = await searchByStatus(status);
+      renderResults(results);
+    } catch (err) {
+      document.getElementById('results').innerHTML = '<p class="msg error">Error: ' + esc(err.message) + '</p>';
+    }
+  }
+
+  function clearResults() {
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('searchQuery').value = '';
+    document.getElementById('filterStatus').value = 'ALL';
+  }
+
+  // ==================== Render Results ====================
+  function renderResults(list) {
+    const box = document.getElementById('results');
+    if (!list || list.length === 0) {
+      box.innerHTML = '<p class="loading">No matches found.</p>';
+      return;
+    }
+
+    let html = '<p style="font-size:12px;color:#888;margin:-8px 0 8px;">' + list.length + ' result' + (list.length > 1 ? 's' : '') + '</p>';
+
+    for (let i = 0; i < list.length; i++) {
+      const c = list[i];
+      const badge = 'badge-' + (c.status || '').replace(/ /g, '-');
+      const balance = Number(c.balance) || 0;
+      const dueStr = c.dueDate || '—';
+      const notesStr = c.notes ? '📝 ' + esc(c.notes) : '';
+      const pendingClass = c._pendingSync ? ' pending' : '';
+
+      html += '<div class="result-card' + pendingClass + '">';
+      html += '<div class="rc-head">';
+      html += '<div>';
+      html += '<div class="rc-name">' + esc(c.clientName) + '</div>';
+      html += '<div class="rc-username">@' + esc(c.username) + '</div>';
+      html += '</div>';
+      html += '<button class="secondary" onclick="openEdit(\'' + jsesc(c.username) + '\')">✏️ Edit</button>';
+      html += '</div>';
+      html += '<div class="rc-meta">Due: ' + esc(dueStr) + ' | Added: ' + esc(c.createdDate || '-') + '</div>';
+      html += '<div class="rc-meta">Due: ₱' + (c.amountDue || 0).toFixed(2) + ' | Paid: ₱' + (c.amountPaid || 0).toFixed(2) + ' | Balance: ₱' + balance.toFixed(2) + '</div>';
+      if (notesStr) html += '<div class="rc-notes">' + notesStr + '</div>';
+      html += '<span class="badge ' + badge + '">' + esc(c.status) + '</span>';
+      if (c._pendingSync) html += ' <span class="badge" style="background:#fff2cc;color:#7f6000;">⏳ Pending sync</span>';
+
+      if (balance > 0 && c.status !== 'PAID TODAY') {
+        html += '<div class="rc-actions">';
+        html += '<input type="number" id="amt' + i + '" placeholder="Amount" step="0.01" min="0" style="width:45%;">';
+        html += '<select id="method' + i + '" style="width:35%;"><option>CASH</option><option>GCASH</option><option>BANK TRANSFER</option><option>OTHER</option></select>';
+        html += '<button onclick="pay(\'' + jsesc(c.username) + '\',' + i + ')" style="width:20%;">Pay</button>';
+        html += '</div>';
+      } else if (balance <= 0) {
+        html += '<div class="rc-meta" style="color:#274e13;margin-top:4px;">✓ Fully paid</div>';
+      }
+
+      html += '</div>';
+    }
+    box.innerHTML = html;
+  }
+
+  // ==================== Payment ====================
+  function pay(username, i) {
+    const amt = document.getElementById('amt' + i).value;
+    const method = document.getElementById('method' + i).value;
+    if (!amt || parseFloat(amt) <= 0) { alert('Enter a valid amount.'); return; }
+
+    pendingPay = { username, amount: amt, method };
+
+    document.getElementById('payConfirmText').innerHTML =
+      'Are you sure you want to mark this as <b>PAID</b>?<br>' +
+      '<b>@' + esc(username) + '</b><br>' +
+      'Amount: <b>₱' + parseFloat(amt).toFixed(2) + '</b><br>' +
+      'Method: ' + esc(method) +
+      (!navigator.onLine ? '<br><br><span style="color:#7f6000;">⚠️ Offline — will sync later</span>' : '');
+
+    document.getElementById('payModal').classList.add('active');
+  }
+
+  function closePayModal() {
+    document.getElementById('payModal').classList.remove('active');
+    pendingPay = null;
+  }
+
+  async function confirmPay() {
+    if (!pendingPay) return;
+    const p = pendingPay;
+    closePayModal();
+
+    try {
+      const res = await recordPayment(p.username, p.amount, p.method);
+      showToast(res.message);
+      if (res.success) {
+        loadSummary();
+        refreshResults();
+        updatePendingBadge();
+      }
+    } catch (err) {
+      showToast('Payment failed: ' + err.message);
+    }
+  }
+
+  // ==================== Refresh Results ====================
+  async function refreshResults() {
+    const status = document.getElementById('filterStatus').value;
+    const q = document.getElementById('searchQuery').value.trim();
+    try {
+      let results;
+      if (q.length >= 1) {
+        results = await searchByName(q);
+      } else {
+        results = await searchByStatus(status);
+      }
+      renderResults(results);
+    } catch (err) {
+      console.error('Refresh error:', err);
+    }
+  }
+
+  // ==================== Edit Client ====================
+  async function openEdit(username) {
+    currentEditUsername = username;
+    document.getElementById('editUsername').value = username;
+    document.getElementById('editMsg').innerHTML = '<div class="msg info">Loading...</div>';
+    document.getElementById('editModal').classList.add('active');
+
+    try {
+      const client = await getClientByUsername(username);
+      if (!client) {
+        document.getElementById('editMsg').innerHTML = '<div class="msg error">Not found.</div>';
+        return;
+      }
+      document.getElementById('editFirstName').value = client.firstName || '';
+      document.getElementById('editLastName').value = client.lastName || '';
+      document.getElementById('editDueDate').value = client.dueDate || '';
+      document.getElementById('editNotes').value = client.notes || '';
+      document.getElementById('editMsg').innerHTML = '';
+    } catch (err) {
+      document.getElementById('editMsg').innerHTML = '<div class="msg error">' + esc(err.message) + '</div>';
+    }
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+    currentEditUsername = '';
+    document.getElementById('editMsg').innerHTML = '';
+  }
+
+  async function saveEdit() {
+    const username = document.getElementById('editUsername').value;
+    const fn = document.getElementById('editFirstName').value.trim();
+    const ln = document.getElementById('editLastName').value.trim();
+    const due = document.getElementById('editDueDate').value;
+    const notes = document.getElementById('editNotes').value.trim();
+    const msgBox = document.getElementById('editMsg');
+
+    if (!fn || !ln || !due) {
+      msgBox.innerHTML = '<div class="msg error">First name, last name, and due date required.</div>';
+      return;
+    }
+
+    msgBox.innerHTML = '<div class="msg info">Saving...</div>';
+
+    try {
+      const res = await editClient(username, fn, ln, due, notes);
+      const cls = res.message.includes('offline') ? 'warning' : (res.success ? 'success' : 'error');
+      msgBox.innerHTML = '<div class="msg ' + cls + '">' + esc(res.message) + '</div>';
+
+      if (res.success) {
+        setTimeout(() => {
+          closeEditModal();
+          loadSummary();
+          refreshResults();
+          updatePendingBadge();
+        }, 300);
+      }
+    } catch (err) {
+      msgBox.innerHTML = '<div class="msg error">' + esc(err.message) + '</div>';
+    }
+  }
+
+  // ==================== Utilities ====================
+  function esc(str) {
+    if (str == null) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function jsesc(str) {
+    if (str == null) return '';
+    return String(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"');
+  }
+
+  // ==================== Init ====================
+  async function init() {
+    updateOnlineStatus();
+    loadSummary();
+
+    // Initial sync if online
+    if (navigator.onLine) {
+      try {
+        await fullSync();
+        loadSummary();
+      } catch (err) {
+        console.error('Initial sync failed:', err);
+      }
+    }
+    updatePendingBadge();
+
+    // Periodic sync every 5 minutes
+    setInterval(async () => {
+      if (navigator.onLine) {
+        try {
+          await fullSync();
+          loadSummary();
+          updatePendingBadge();
+        } catch (err) {}
+      }
+    }, 5 * 60 * 1000);
+  }
+
+  init();
+</script>
+
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a4b0e0bb174b09',t:'MTc4NjU5MjM0OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
