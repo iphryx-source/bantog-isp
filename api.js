@@ -363,18 +363,21 @@ async function searchByStatus(filterType) {
 
 // ---- Add client ----
 async function addClient(firstName, lastName, username, dueDate) {
+  const fullName = firstName.trim() + (lastName.trim() ? ' ' + lastName.trim() : '');
+  const usernameFinal = username.trim() || firstName.trim().replace(/\s+/g, '.').toLowerCase();
+
   if (isOnline()) {
     try {
       const result = await fetchGAS(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'addClient', firstName, lastName, username, dueDate })
+        body: JSON.stringify({ action: 'addClient', firstName, lastName, username: usernameFinal, dueDate })
       });
 
       if (result.success) {
         await dbPut('clients', {
-          clientName: firstName.trim() + ' ' + lastName.trim(),
-          username: username.trim(),
+          clientName: fullName,
+          username: usernameFinal,
           dueDate: dueDate,
           amountDue: 650,
           amountPaid: 0,
@@ -395,8 +398,8 @@ async function addClient(firstName, lastName, username, dueDate) {
 
   // Offline
   await dbPut('clients', {
-    clientName: firstName.trim() + ' ' + lastName.trim(),
-    username: username.trim(),
+    clientName: fullName,
+    username: usernameFinal,
     dueDate, amountDue: 650, amountPaid: 0, balance: 650,
     status: 'UPCOMING',
     installDate: new Date().toISOString().split('T')[0],
@@ -407,15 +410,17 @@ async function addClient(firstName, lastName, username, dueDate) {
 
   await dbPut('pendingActions', {
     type: 'addClient',
-    data: { firstName, lastName, username, dueDate },
+    data: { firstName, lastName, username: usernameFinal, dueDate },
     timestamp: new Date().toISOString()
   });
 
-  return { success: true, message: firstName.trim() + ' ' + lastName.trim() + ' added (offline). Will sync when online.' };
+  return { success: true, message: fullName + ' added (offline). Will sync when online.' };
 }
 
 // ---- Edit client ----
 async function editClient(username, firstName, lastName, dueDate, notes) {
+  const fullName = firstName.trim() + (lastName.trim() ? ' ' + lastName.trim() : '');
+
   if (isOnline()) {
     try {
       const result = await fetchGAS(API_URL, {
@@ -427,7 +432,7 @@ async function editClient(username, firstName, lastName, dueDate, notes) {
       if (result.success) {
         const existing = await dbGet('clients', username);
         if (existing) {
-          existing.clientName = firstName.trim() + ' ' + lastName.trim();
+          existing.clientName = fullName;
           existing.dueDate = dueDate;
           existing.notes = notes || '';
           await dbPut('clients', existing);
@@ -441,7 +446,7 @@ async function editClient(username, firstName, lastName, dueDate, notes) {
 
   const existing = await dbGet('clients', username);
   if (existing) {
-    existing.clientName = firstName.trim() + ' ' + lastName.trim();
+    existing.clientName = fullName;
     existing.dueDate = dueDate;
     existing.notes = notes || '';
     existing._pendingSync = true;
