@@ -256,6 +256,19 @@
   </div>
 </div>
 
+<!-- Debug Panel (tap status pill 5 times to show) -->
+<div class="modal-overlay" id="debugModal">
+  <div class="modal">
+    <button class="close-btn" onclick="document.getElementById('debugModal').classList.remove('active')">&times;</button>
+    <h2>🔧 Debug Info</h2>
+    <div id="debugContent" style="font-size:12px; font-family:monospace; white-space:pre-wrap; background:#f5f5f5; padding:10px; border-radius:6px; max-height:300px; overflow-y:auto;">Loading...</div>
+    <div class="modal-actions">
+      <button onclick="debugForceSync()">Force Sync</button>
+      <button class="secondary" onclick="document.getElementById('debugModal').classList.remove('active')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -330,8 +343,12 @@
       const lastSyncText = document.getElementById('lastSyncText');
       if (status.lastSync) {
         const d = new Date(status.lastSync);
-        lastSyncText.textContent = 'Last sync: ' + d.toLocaleTimeString();
+        lastSyncText.textContent = 'Synced: ' + d.toLocaleTimeString() + ' (' + status.localClientCount + ' clients)';
+      } else {
+        lastSyncText.textContent = 'Not synced yet (' + status.localClientCount + ' local)';
       }
+
+      debugLog('Sync status:', status);
     } catch (err) {
       console.error('Status update error:', err);
     }
@@ -368,17 +385,26 @@
 
     try {
       const result = await fullSync();
-      let msg = 'Sync complete!';
-      if (result.synced > 0) msg = result.synced + ' action(s) synced!';
-      showToast(msg);
+      debugLog('Sync result:', result);
+
+      if (result.pulled) {
+        showToast('✅ Synced! ' + result.pullCount + ' clients loaded');
+      } else if (result.pullReason === 'offline') {
+        showToast('⚠️ You are offline');
+      } else {
+        showToast('⚠️ Sync issue: ' + (result.pullReason || 'unknown'));
+      }
+
       loadSummary();
     } catch (err) {
-      showToast('Sync failed: ' + err.message);
+      showToast('❌ Sync failed: ' + err.message);
+      debugLog('Sync error:', err);
     }
 
     btn.disabled = false;
     btn.textContent = '🔄 Sync';
     updateOnlineStatus();
+    updatePendingBadge();
   }
 
   // ==================== Summary ====================
@@ -646,11 +672,23 @@
     // Initial sync if online
     if (navigator.onLine) {
       try {
-        await fullSync();
+        showToast('Syncing with server...', 3000);
+        const result = await fullSync();
+        debugLog('Init sync result:', result);
+
+        if (result.pulled) {
+          showToast('✅ ' + result.pullCount + ' clients loaded!', 2000);
+        } else {
+          showToast('⚠️ Sync issue: ' + (result.pullReason || 'check console'), 3000);
+        }
+
         loadSummary();
       } catch (err) {
-        console.error('Initial sync failed:', err);
+        debugLog('Initial sync failed:', err);
+        showToast('❌ Initial sync failed', 2000);
       }
+    } else {
+      showToast('📴 Offline — using cached data', 2000);
     }
     updatePendingBadge();
 
@@ -666,8 +704,83 @@
     }, 5 * 60 * 1000);
   }
 
+  // ==================== Debug Panel ====================
+  let statusClickCount = 0;
+  document.getElementById('statusPill').addEventListener('click', () => {
+    statusClickCount++;
+    if (statusClickCount >= 5) {
+      statusClickCount = 0;
+      showDebugPanel();
+    }
+  });
+
+  async function showDebugPanel() {
+    const el = document.getElementById('debugContent');
+    document.getElementById('debugModal').classList.add('active');
+    el.textContent = 'Loading debug info...\n';
+
+    try {
+      const status = await getSyncStatus();
+      const clients = await dbGetAll('clients');
+      const pending = await dbGetAll('pendingActions');
+
+      let info = '=== BANTOG ISP DEBUG ===\n\n';
+      info += 'Online: ' + navigator.onLine + '\n';
+      info += 'API URL: ' + API_URL.substring(0, 60) + '...\n';
+      info += 'Local clients: ' + clients.length + '\n';
+      info += 'Pending actions: ' + pending.length + '\n';
+      info += 'Last sync: ' + (status.lastSync || 'never') + '\n\n';
+
+      if (clients.length > 0) {
+        info += '--- First 3 clients ---\n';
+        clients.slice(0, 3).forEach((c, i) => {
+          info += (i+1) + '. ' + c.clientName + ' (@' + c.username + ')\n';
+          info += '   Due: ' + c.dueDate + ' | Paid: ₱' + (c.amountPaid||0) + ' | Status: ' + c.status + '\n';
+        });
+      } else {
+        info += '⚠️ NO CLIENTS IN LOCAL DB!\n';
+        info += 'Sync has not downloaded any data yet.\n';
+      }
+
+      info += '\n--- Test API Connection ---\n';
+      if (navigator.onLine) {
+        try {
+          const testUrl = API_URL + '?action=allClients';
+          const testResult = await fetchGAS(testUrl);
+          info += 'API test: ✅ OK (' + (Array.isArray(testResult) ? testResult.length + ' clients' : typeof testResult) + ')\n';
+        } catch (err) {
+          info += 'API test: ❌ ' + err.message + '\n';
+        }
+      } else {
+        info += 'API test: skipped (offline)\n';
+      }
+
+      el.textContent = info;
+    } catch (err) {
+      el.textContent = 'Error: ' + err.message;
+    }
+  }
+
+  async function debugForceSync() {
+    const el = document.getElementById('debugContent');
+    el.textContent += '\n\n--- Force Sync Started ---\n';
+
+    try {
+      const result = await fullSync();
+      el.textContent += 'Result: ' + JSON.stringify(result, null, 2) + '\n';
+
+      const clients = await dbGetAll('clients');
+      el.textContent += 'Clients in DB now: ' + clients.length + '\n';
+
+      loadSummary();
+      updatePendingBadge();
+    } catch (err) {
+      el.textContent += 'Error: ' + err.message + '\n';
+    }
+  }
+
   init();
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a4b0e0bb174b09',t:'MTc4NjU5MjM0OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a4ecf8fba53424',t:'MTc4NjU5NDgwOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
