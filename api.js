@@ -4,7 +4,7 @@
 // Replace API_URL with your deployed Apps Script web app URL
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbwsZq13QZHLaklJvCcOoShyhc6dPE4NQWYo33gO2qqI_5JoCFraFani4CkmX1yMHKLNOQ/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 // Debug mode — set to true to see detailed logs in console
 const DEBUG = true;
@@ -224,14 +224,14 @@ async function computeSummaryFromLocal() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const DUE_SOON_DAYS = 7;
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
 
   let dueToday = 0, dueSoon = 0, pastDue = 0, totalCollected = 0;
   let paidCount = 0, toCollectCount = 0, totalClients = 0;
 
   for (const c of clients) {
-    const balance = (c.amountDue || 0) - (c.amountPaid || 0);
+    const prevBalance = c.prevBalance || 0;
+    const totalDue = (c.amountDue || 0) + prevBalance;
+    const balance = totalDue - (c.amountPaid || 0);
     totalClients++;
     totalCollected += c.amountPaid || 0;
 
@@ -245,10 +245,7 @@ async function computeSummaryFromLocal() {
       if (!isNaN(due.getTime())) {
         due.setHours(0, 0, 0, 0);
 
-        // Check if client was added before today
-        // Existing clients (added before today) always count in "To Collect"
-        // New clients (added today or later) don't count until the 1st of next month
-        let addedBeforeToday = true; // Default: assume existing
+        let addedBeforeToday = true;
         if (c.installDate) {
           const install = new Date(c.installDate + 'T00:00:00');
           if (!isNaN(install.getTime())) {
@@ -257,18 +254,13 @@ async function computeSummaryFromLocal() {
           }
         }
 
-        // Get first day of the due month
         const dueMonthStart = new Date(due.getFullYear(), due.getMonth(), 1);
         dueMonthStart.setHours(0, 0, 0, 0);
 
-        // Count in "To Collect" if:
-        // 1. Added before today (existing client), OR
-        // 2. We've reached the first day of the due month
         if (addedBeforeToday || today >= dueMonthStart) {
           toCollectCount++;
         }
 
-        // Status counts
         if (due < today) {
           pastDue++;
         } else if (due.getTime() === today.getTime()) {
@@ -300,7 +292,9 @@ async function searchLocal(query, filterType) {
 
   // Recompute status
   const enriched = clients.map(c => {
-    const balance = (c.amountDue || 0) - (c.amountPaid || 0);
+    const prevBalance = c.prevBalance || 0;
+    const totalDue = (c.amountDue || 0) + prevBalance;
+    const balance = totalDue - (c.amountPaid || 0);
     let status = 'UPCOMING';
 
     if (balance <= 0) {
@@ -315,7 +309,7 @@ async function searchLocal(query, filterType) {
         else status = 'UPCOMING';
       }
     }
-    return { ...c, status, balance };
+    return { ...c, status, totalDue, balance };
   });
 
   let results = enriched;
