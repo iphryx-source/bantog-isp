@@ -196,9 +196,9 @@
 <div class="section">
   <h2 class="section-title title-add">➕ Add New Client</h2>
   <div id="addMsg"></div>
-  <input id="firstName" placeholder="First Name">
-  <input id="lastName" placeholder="Last Name">
-  <input id="username" placeholder="Username (e.g. B.RAFAELCORPUZ)">
+  <input id="firstName" placeholder="First Name *">
+  <input id="lastName" placeholder="Last Name (optional)">
+  <input id="username" placeholder="Username (optional)">
   <input id="dueDate" type="date" placeholder="mm/dd/yyyy">
   <div class="hint">Format: MM/DD/YYYY</div>
   <button onclick="submitClient()">Add Client</button>
@@ -240,8 +240,8 @@
     <h2>✏️ Edit Client</h2>
     <div id="editMsg"></div>
     <input id="editUsername" type="text" placeholder="Username" disabled>
-    <input id="editFirstName" placeholder="First Name">
-    <input id="editLastName" placeholder="Last Name">
+    <input id="editFirstName" placeholder="First Name *">
+    <input id="editLastName" placeholder="Last Name (optional)">
     <input id="editDueDate" type="date" placeholder="mm/dd/yyyy">
     <div class="hint">Format: MM/DD/YYYY</div>
     <textarea id="editNotes" placeholder="Notes (optional)"></textarea>
@@ -504,8 +504,8 @@
     const due = document.getElementById('dueDate').value;
     const msgBox = document.getElementById('addMsg');
 
-    if (!fn || !ln || !un || !due) {
-      msgBox.innerHTML = '<div class="msg error">All fields are required.</div>';
+    if (!fn || !due) {
+      msgBox.innerHTML = '<div class="msg error">First Name and Due Date are required.</div>';
       return;
     }
 
@@ -704,8 +704,8 @@
     const notes = document.getElementById('editNotes').value.trim();
     const msgBox = document.getElementById('editMsg');
 
-    if (!fn || !ln || !due) {
-      msgBox.innerHTML = '<div class="msg error">First name, last name, and due date required.</div>';
+    if (!fn || !due) {
+      msgBox.innerHTML = '<div class="msg error">First Name and Due Date are required.</div>';
       return;
     }
 
@@ -898,5 +898,5 @@
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a666f0cf8ce65a',t:'MTc4NjYxMDI5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a672f77bb9c7b1',t:'MTc4NjYxMDc4Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
