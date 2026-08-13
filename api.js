@@ -4,7 +4,7 @@
 // Replace API_URL with your deployed Apps Script web app URL
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+const API_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbwsZq13QZHLaklJvCcOoShyhc6dPE4NQWYo33gO2qqI_5JoCFraFani4CkmX1yMHKLNOQ/exec';
 
 // Debug mode — set to true to see detailed logs in console
 const DEBUG = true;
