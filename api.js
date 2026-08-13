@@ -4,7 +4,7 @@
 // Replace API_URL with your deployed Apps Script web app URL
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbwsZq13QZHLaklJvCcOoShyhc6dPE4NQWYo33gO2qqI_5JoCFraFani4CkmX1yMHKLNOQ/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 // Debug mode — set to true to see detailed logs in console
 const DEBUG = true;
@@ -329,6 +329,13 @@ async function searchLocal(query, filterType) {
       results = results.filter(c => c.paymentDate === todayStr);
     } else if (filterType === 'PAID') {
       results = results.filter(c => c.status === 'PAID');
+    } else if (filterType === 'HAS BALANCE') {
+      // Clients who paid something but still have a balance
+      results = results.filter(c => {
+        const paid = c.amountPaid || 0;
+        const bal = (c.totalDue || c.amountDue || 0) - paid;
+        return paid > 0 && bal > 0;
+      });
     } else {
       results = results.filter(c => c.status === filterType);
     }
