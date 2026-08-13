@@ -236,7 +236,6 @@
   <!-- Add Client -->
   <div class="section">
     <h2 class="section-title title-add">➕ Add New Client</h2>
-    <div id="addMsg"></div>
     <input id="firstName" placeholder="First Name *">
     <input id="lastName" placeholder="Last Name (optional)">
     <input id="username" placeholder="Username (optional)">
@@ -608,36 +607,32 @@
     const ln = document.getElementById('lastName').value.trim();
     const un = document.getElementById('username').value.trim();
     const due = document.getElementById('dueDate').value;
-    const msgBox = document.getElementById('addMsg');
     const btn = event.target;
 
     if (!fn || !due) {
-      msgBox.innerHTML = '<div class="msg error">First Name and Due Date are required.</div>';
+      showToast('First Name and Date are required.', 3000);
       submittingClient = false;
       return;
     }
 
     btn.disabled = true;
-    msgBox.innerHTML = '<div class="msg info">Saving...</div>';
+    showToast('Saving...', 2000);
 
     try {
       const res = await addClient(fn, ln, un, due);
-      const cls = res.success ? 'success' : 'error';
-      if (res.message.includes('offline')) {
-        msgBox.innerHTML = '<div class="msg warning">' + esc(res.message) + '</div>';
-      } else {
-        msgBox.innerHTML = '<div class="msg ' + cls + '">' + esc(res.message) + '</div>';
-      }
       if (res.success) {
+        showToast('✅ ' + res.message, 3000);
         document.getElementById('firstName').value = '';
         document.getElementById('lastName').value = '';
         document.getElementById('username').value = '';
-        document.getElementById('dueDate').value = '';
+        setDefaultDueDate();
         loadSummary();
         updatePendingBadge();
+      } else {
+        showToast('❌ ' + res.message, 3000);
       }
     } catch (err) {
-      msgBox.innerHTML = '<div class="msg error">' + esc(err.message) + '</div>';
+      showToast('❌ ' + err.message, 3000);
     }
 
     btn.disabled = false;
@@ -1101,5 +1096,5 @@
 
 </script>
 
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a71758ef19d44c',t:'MTc4NjYxNzUxNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
