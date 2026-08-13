@@ -332,6 +332,10 @@
       <button onclick="clearCache()" style="background:#ea4335;">Clear Cache</button>
       <button class="secondary" onclick="document.getElementById('debugModal').classList.remove('active')">Close</button>
     </div>
+    <div style="margin-top:10px;font-size:11px;color:#666;">
+      <b>Auto Roll Over:</b> Runs on the 1st of each month automatically.
+      <br>Setup: Run <code>setup()</code> once in Apps Script.
+    </div>
   </div>
 </div>
 
@@ -682,7 +686,9 @@
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
       const badge = 'badge-' + (c.status || '').replace(/ /g, '-');
-      const balance = Number(c.balance) || 0;
+      const prevBalance = c.prevBalance || 0;
+      const totalDue = c.totalDue || (c.amountDue || 0) + prevBalance;
+      const balance = c.balance || (totalDue - (c.amountPaid || 0));
       const dueStr = c.dueDate || '—';
       const notesStr = c.notes ? '📝 ' + esc(c.notes) : '';
       const pendingClass = c._pendingSync ? ' pending' : '';
@@ -696,7 +702,15 @@
       html += '<button class="secondary" onclick="openEdit(\'' + jsesc(c.username) + '\')">✏️ Edit</button>';
       html += '</div>';
       html += '<div class="rc-meta">Due: ' + fmtDate(dueStr) + ' | Added: ' + fmtDate(c.createdDate) + '</div>';
-      html += '<div class="rc-meta">Due: ₱' + (c.amountDue || 0).toFixed(2) + ' | Paid: ₱' + (c.amountPaid || 0).toFixed(2) + ' | Balance: ₱' + balance.toFixed(2) + '</div>';
+      
+      // Show billing breakdown
+      if (prevBalance > 0) {
+        html += '<div class="rc-meta">Bill: ₱' + (c.amountDue || 0).toFixed(2) + ' + Previous: ₱' + prevBalance.toFixed(2) + ' = <b>Total: ₱' + totalDue.toFixed(2) + '</b></div>';
+      } else {
+        html += '<div class="rc-meta">Amount Due: ₱' + (c.amountDue || 0).toFixed(2) + '</div>';
+      }
+      html += '<div class="rc-meta">Paid: ₱' + (c.amountPaid || 0).toFixed(2) + ' | <b>Balance: ₱' + balance.toFixed(2) + '</b></div>';
+      
       if (notesStr) html += '<div class="rc-notes">' + notesStr + '</div>';
       html += '<span class="badge ' + badge + '">' + esc(c.status) + '</span>';
       if (c._pendingSync) html += ' <span class="badge" style="background:#fff2cc;color:#7f6000;">⏳ Pending sync</span>';
@@ -1055,6 +1069,26 @@
     }
   }
 
+  async function runRollOver() {
+    const el = document.getElementById('debugContent');
+    el.textContent += '\n\n--- Rolling Over Balances ---\n';
+    showToast('Rolling over balances...', 2000);
+
+    try {
+      const url = API_URL + '?action=rollOver';
+      const result = await fetchGAS(url);
+      el.textContent += 'Result: ' + JSON.stringify(result, null, 2) + '\n';
+      showToast('✅ ' + (result.message || 'Roll over complete!'), 3000);
+      
+      // Refresh data
+      await autoSync();
+      loadSummary();
+    } catch (err) {
+      el.textContent += 'Error: ' + err.message + '\n';
+      showToast('❌ Roll over failed: ' + err.message, 3000);
+    }
+  }
+
   async function clearCache() {
     const el = document.getElementById('debugContent');
     el.textContent += '\n\n--- Clearing Cache ---\n';
@@ -1096,5 +1130,5 @@
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a748ec5dcf84d3',t:'MTc4NjYxOTU0Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a787a00f4737d3',t:'MTc4NjYyMjExNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
