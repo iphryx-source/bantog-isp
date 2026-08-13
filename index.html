@@ -39,6 +39,7 @@
 
   /* ===== Cards ===== */
   .cards { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .cards-3 { grid-template-columns: 1fr 1fr 1fr; }
   .card { background: white; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
   .card .num { font-size: 22px; font-weight: 700; }
   .card .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
@@ -213,17 +214,23 @@
   <button class="secondary" onclick="dismissInstall()" style="margin-left:6px;">Later</button>
 </div>
 
-<!-- Cards -->
-<div class="cards">
-  <div class="card"><div class="num" id="cDueToday">-</div><div class="label">Due Today</div></div>
-  <div class="card"><div class="num" id="cDueSoon">-</div><div class="label">Due Soon</div></div>
-  <div class="card"><div class="num" id="cPastDue">-</div><div class="label">Past Due</div></div>
-  <div class="card"><div class="num" id="cTotal">-</div><div class="label">Collected</div></div>
-</div>
-<div class="cards" style="margin-top: -6px;">
+<!-- Cards Row 1: Client Counts -->
+<div class="cards cards-3">
   <div class="card" style="background: #d9ead3;"><div class="num" id="cPaid" style="color: #274e13;">-</div><div class="label">Paid</div></div>
   <div class="card" style="background: #fce5cd;"><div class="num" id="cToCollect" style="color: #783f04;">-</div><div class="label">To Collect</div></div>
   <div class="card" style="background: #cfe2f3;"><div class="num" id="cTotalClients" style="color: #073763;">-</div><div class="label">Total Clients</div></div>
+</div>
+
+<!-- Cards Row 2: Due Status -->
+<div class="cards cards-3">
+  <div class="card"><div class="num" id="cDueToday">-</div><div class="label">Due Today</div></div>
+  <div class="card"><div class="num" id="cDueSoon">-</div><div class="label">Due Soon</div></div>
+  <div class="card"><div class="num" id="cPastDue">-</div><div class="label">Past Due</div></div>
+</div>
+
+<!-- Cards Row 3: Total Collected -->
+<div class="cards" style="grid-template-columns: 1fr;">
+  <div class="card" style="background: #1a73e8; color: white;"><div class="num" style="color: white; font-size: 28px;" id="cTotal">-</div><div class="label" style="color: rgba(255,255,255,0.8);">Total Collected This Month</div></div>
 </div>
 
 <!-- Add Client -->
@@ -1084,5 +1091,5 @@
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a6c19328ffdd44',t:'MTc4NjYxNDAwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a6cbf3382149e4',t:'MTc4NjYxNDQyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
