@@ -370,7 +370,7 @@ async function searchByStatus(filterType) {
 // ---- Add client ----
 async function addClient(firstName, lastName, username, dueDate) {
   const fullName = firstName.trim() + (lastName.trim() ? ' ' + lastName.trim() : '');
-  const usernameFinal = username.trim() || firstName.trim().replace(/\s+/g, '.').toLowerCase();
+  const usernameFinal = username.trim() || 'N/A';
 
   if (isOnline()) {
     try {
