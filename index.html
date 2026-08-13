@@ -593,18 +593,26 @@
   }
 
   // ==================== Add Client ====================
+  let submittingClient = false;
+
   async function submitClient() {
+    if (submittingClient) return; // Prevent double-click
+    submittingClient = true;
+
     const fn = document.getElementById('firstName').value.trim();
     const ln = document.getElementById('lastName').value.trim();
     const un = document.getElementById('username').value.trim();
     const due = document.getElementById('dueDate').value;
     const msgBox = document.getElementById('addMsg');
+    const btn = event.target;
 
     if (!fn || !due) {
       msgBox.innerHTML = '<div class="msg error">First Name and Due Date are required.</div>';
+      submittingClient = false;
       return;
     }
 
+    btn.disabled = true;
     msgBox.innerHTML = '<div class="msg info">Saving...</div>';
 
     try {
@@ -626,6 +634,9 @@
     } catch (err) {
       msgBox.innerHTML = '<div class="msg error">' + esc(err.message) + '</div>';
     }
+
+    btn.disabled = false;
+    submittingClient = false;
   }
 
   // ==================== Search ====================
@@ -706,7 +717,10 @@
   }
 
   // ==================== Payment ====================
+  let paymentInProgress = false;
+
   function pay(username, i) {
+    if (paymentInProgress) return;
     const amt = document.getElementById('amt' + i).value;
     const method = document.getElementById('method' + i).value;
     if (!amt || parseFloat(amt) <= 0) { alert('Enter a valid amount.'); return; }
@@ -729,7 +743,8 @@
   }
 
   async function confirmPay() {
-    if (!pendingPay) return;
+    if (!pendingPay || paymentInProgress) return;
+    paymentInProgress = true;
     const p = pendingPay;
     closePayModal();
 
@@ -744,6 +759,8 @@
     } catch (err) {
       showToast('Payment failed: ' + err.message);
     }
+
+    paymentInProgress = false;
   }
 
   // ==================== Refresh Results ====================
@@ -1069,5 +1086,5 @@
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a6b133ffb0095e',t:'MTc4NjYxMzMzMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a6bc2def1c854e',t:'MTc4NjYxMzc4Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
