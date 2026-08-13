@@ -57,6 +57,12 @@
   .sub-label { font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 4px; }
   .hint { font-size: 11px; color: #aaa; margin: -4px 0 8px; }
 
+  /* Date input styling */
+  input[type="date"] { position: relative; }
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper { padding: 0; }
+  input[type="date"]:not(:valid)::-webkit-datetime-edit { color: transparent; }
+  input[type="date"]:focus::-webkit-datetime-edit { color: #222; }
+
   /* ===== Form Elements ===== */
   input, select, button, textarea {
     width: 100%; padding: 10px; margin-bottom: 8px;
@@ -193,7 +199,8 @@
   <input id="firstName" placeholder="First Name">
   <input id="lastName" placeholder="Last Name">
   <input id="username" placeholder="Username (e.g. B.RAFAELCORPUZ)">
-  <input id="dueDate" type="date">
+  <input id="dueDate" type="date" placeholder="mm/dd/yyyy">
+  <div class="hint">Format: MM/DD/YYYY</div>
   <button onclick="submitClient()">Add Client</button>
 </div>
 
@@ -235,7 +242,8 @@
     <input id="editUsername" type="text" placeholder="Username" disabled>
     <input id="editFirstName" placeholder="First Name">
     <input id="editLastName" placeholder="Last Name">
-    <input id="editDueDate" type="date">
+    <input id="editDueDate" type="date" placeholder="mm/dd/yyyy">
+    <div class="hint">Format: MM/DD/YYYY</div>
     <textarea id="editNotes" placeholder="Notes (optional)"></textarea>
     <div class="modal-actions">
       <button onclick="saveEdit()">Save Changes</button>
@@ -343,7 +351,9 @@
       const lastSyncText = document.getElementById('lastSyncText');
       if (status.lastSync) {
         const d = new Date(status.lastSync);
-        lastSyncText.textContent = 'Synced: ' + d.toLocaleTimeString() + ' (' + status.localClientCount + ' clients)';
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const dateStr = months[d.getMonth()] + ' ' + String(d.getDate()).padStart(2, '0') + ' ' + d.toLocaleTimeString();
+        lastSyncText.textContent = 'Synced: ' + dateStr + ' (' + status.localClientCount + ' clients)';
       } else {
         lastSyncText.textContent = 'Not synced yet (' + status.localClientCount + ' local)';
       }
@@ -578,7 +588,7 @@
       html += '</div>';
       html += '<button class="secondary" onclick="openEdit(\'' + jsesc(c.username) + '\')">✏️ Edit</button>';
       html += '</div>';
-      html += '<div class="rc-meta">Due: ' + esc(dueStr) + ' | Added: ' + esc(c.createdDate || '-') + '</div>';
+      html += '<div class="rc-meta">Due: ' + fmtDate(dueStr) + ' | Added: ' + fmtDate(c.createdDate) + '</div>';
       html += '<div class="rc-meta">Due: ₱' + (c.amountDue || 0).toFixed(2) + ' | Paid: ₱' + (c.amountPaid || 0).toFixed(2) + ' | Balance: ₱' + balance.toFixed(2) + '</div>';
       if (notesStr) html += '<div class="rc-notes">' + notesStr + '</div>';
       html += '<span class="badge ' + badge + '">' + esc(c.status) + '</span>';
@@ -730,6 +740,19 @@
     return String(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"');
   }
 
+  // Format date to "Jan 01, 2026" style
+  function fmtDate(dateStr) {
+    if (!dateStr) return '—';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const year = parts[0];
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    if (isNaN(month) || isNaN(day)) return dateStr;
+    return months[month - 1] + ' ' + String(day).padStart(2, '0') + ', ' + year;
+  }
+
   // ==================== Init ====================
   async function init() {
     updateOnlineStatus();
@@ -791,7 +814,7 @@
         info += '--- First 3 clients ---\n';
         clients.slice(0, 3).forEach((c, i) => {
           info += (i+1) + '. ' + c.clientName + ' (@' + c.username + ')\n';
-          info += '   Due: ' + c.dueDate + ' | Paid: ₱' + (c.amountPaid||0) + ' | Status: ' + c.status + '\n';
+          info += '   Due: ' + fmtDate(c.dueDate) + ' | Paid: ₱' + (c.amountPaid||0) + ' | Status: ' + c.status + '\n';
         });
       } else {
         info += '⚠️ NO CLIENTS IN LOCAL DB!\n';
@@ -837,5 +860,5 @@
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a51aef4c8e106b',t:'MTc4NjU5NjY5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
