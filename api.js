@@ -368,22 +368,31 @@ async function searchByStatus(filterType) {
 }
 
 // ---- Add client ----
-async function addClient(firstName, lastName, username, dueDate) {
+async function addClient(firstName, lastName, username, installDate) {
   const fullName = firstName.trim() + (lastName.trim() ? ' ' + lastName.trim() : '');
   const usernameFinal = username.trim() || 'N/A';
+
+  // Calculate due date as 1 month from install date
+  const install = new Date(installDate + 'T00:00:00');
+  install.setMonth(install.getMonth() + 1);
+  const dueYear = install.getFullYear();
+  const dueMonth = String(install.getMonth() + 1).padStart(2, '0');
+  const dueDay = String(install.getDate()).padStart(2, '0');
+  const dueDate = dueYear + '-' + dueMonth + '-' + dueDay;
 
   if (isOnline()) {
     try {
       const result = await fetchGAS(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'addClient', firstName, lastName, username: usernameFinal, dueDate })
+        body: JSON.stringify({ action: 'addClient', firstName, lastName, username: usernameFinal, dueDate, installDate })
       });
 
       if (result.success) {
         await dbPut('clients', {
           clientName: fullName,
           username: usernameFinal,
+          installDate: installDate,
           dueDate: dueDate,
           amountDue: 650,
           amountPaid: 0,
@@ -406,9 +415,10 @@ async function addClient(firstName, lastName, username, dueDate) {
   await dbPut('clients', {
     clientName: fullName,
     username: usernameFinal,
-    dueDate, amountDue: 650, amountPaid: 0, balance: 650,
+    installDate: installDate,
+    dueDate: dueDate,
+    amountDue: 650, amountPaid: 0, balance: 650,
     status: 'UPCOMING',
-    installDate: new Date().toISOString().split('T')[0],
     createdDate: new Date().toISOString().split('T')[0],
     paymentDate: '', paymentMethod: '', notes: '',
     _pendingSync: true
@@ -416,11 +426,11 @@ async function addClient(firstName, lastName, username, dueDate) {
 
   await dbPut('pendingActions', {
     type: 'addClient',
-    data: { firstName, lastName, username: usernameFinal, dueDate },
+    data: { firstName, lastName, username: usernameFinal, dueDate, installDate },
     timestamp: new Date().toISOString()
   });
 
-  return { success: true, message: fullName + ' added (offline). Will sync when online.' };
+  return { success: true, message: fullName + ' added. Due: ' + dueDate };
 }
 
 // ---- Edit client ----
