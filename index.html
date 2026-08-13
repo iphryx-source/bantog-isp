@@ -233,19 +233,19 @@
   <div class="card" style="background: #1a73e8; color: white;"><div class="num" style="color: white; font-size: 28px;" id="cTotal">-</div><div class="label" style="color: rgba(255,255,255,0.8);">Total Collected This Month</div></div>
 </div>
 
-<!-- Add Client -->
-<div class="section">
-  <h2 class="section-title title-add">➕ Add New Client</h2>
-  <div id="addMsg"></div>
-  <input id="firstName" placeholder="First Name *">
-  <input id="lastName" placeholder="Last Name (optional)">
-  <input id="username" placeholder="Username (optional)">
-  <div class="date-field">
-    <input id="dueDate" type="date" required>
-    <label for="dueDate">Due Date</label>
+  <!-- Add Client -->
+  <div class="section">
+    <h2 class="section-title title-add">➕ Add New Client</h2>
+    <div id="addMsg"></div>
+    <input id="firstName" placeholder="First Name *">
+    <input id="lastName" placeholder="Last Name (optional)">
+    <input id="username" placeholder="Username (optional)">
+    <div class="date-field">
+      <input id="dueDate" type="date" required>
+      <label for="dueDate">Due Date (auto: 1 month from today)</label>
+    </div>
+    <button onclick="submitClient()">Add Client</button>
   </div>
-  <button onclick="submitClient()">Add Client</button>
-</div>
 
 <!-- Search & Filter -->
 <div class="section">
@@ -925,6 +925,17 @@
     input.setSelectionRange(start, end);
   }
 
+  // Set default due date to 1 month from today
+  function setDefaultDueDate() {
+    const today = new Date();
+    today.setMonth(today.getMonth() + 1); // Add 1 month
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateStr = year + '-' + month + '-' + day;
+    document.getElementById('dueDate').value = dateStr;
+  }
+
   // Attach auto-format listeners
   function setupInputFormatting() {
     // First/Last name — title case
@@ -949,6 +960,7 @@
     updateOnlineStatus();
     loadSummary();
     setupInputFormatting();
+    setDefaultDueDate(); // Auto-set due date to 1 month from today
 
     // Auto-sync on startup with retry
     if (navigator.onLine) {
@@ -1091,5 +1103,5 @@
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a6cbf3382149e4',t:'MTc4NjYxNDQyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a6ecc9deb503d7',t:'MTc4NjYxNTc3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
