@@ -3,7 +3,7 @@
 // Caches app shell for offline use
 // ============================================================
 
-const CACHE_NAME = 'bantog-isp-v1';
+const CACHE_NAME = 'bantog-isp-v2';  // Increment this to force cache refresh
 const SHELL_URLS = [
   '/',
   '/index.html',
@@ -12,7 +12,7 @@ const SHELL_URLS = [
   '/icons/icon-512.png'
 ];
 
-// Install — cache app shell
+// Install — cache app shell (only static assets, NOT api.js)
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -35,6 +35,14 @@ self.addEventListener('activate', (event) => {
 // Fetch — network-first for API calls, cache-first for app shell
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // NEVER cache api.js — always fetch fresh
+  if (url.pathname.endsWith('api.js')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
   // For API calls (to Google Apps Script) — network only, no caching
   if (url.hostname.includes('script.google.com') || url.hostname.includes('script.googleusercontent.com')) {
