@@ -245,14 +245,15 @@ async function computeSummaryFromLocal() {
       if (!isNaN(due.getTime())) {
         due.setHours(0, 0, 0, 0);
 
-        // Check if client was added before this month
-        let addedBeforeThisMonth = false;
+        // Check if client was added before today
+        // Existing clients (added before today) always count in "To Collect"
+        // New clients (added today or later) don't count until the 1st of next month
+        let addedBeforeToday = true; // Default: assume existing
         if (c.installDate) {
           const install = new Date(c.installDate + 'T00:00:00');
           if (!isNaN(install.getTime())) {
-            const installMonth = install.getMonth();
-            const installYear = install.getFullYear();
-            addedBeforeThisMonth = (installYear < currentYear) || (installYear === currentYear && installMonth < currentMonth);
+            install.setHours(0, 0, 0, 0);
+            addedBeforeToday = (install < today);
           }
         }
 
@@ -261,9 +262,9 @@ async function computeSummaryFromLocal() {
         dueMonthStart.setHours(0, 0, 0, 0);
 
         // Count in "To Collect" if:
-        // 1. Added before this month (existing client), OR
+        // 1. Added before today (existing client), OR
         // 2. We've reached the first day of the due month
-        if (addedBeforeThisMonth || today >= dueMonthStart) {
+        if (addedBeforeToday || today >= dueMonthStart) {
           toCollectCount++;
         }
 
