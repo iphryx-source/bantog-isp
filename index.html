@@ -63,6 +63,26 @@
   input[type="date"]:not(:valid)::-webkit-datetime-edit { color: transparent; }
   input[type="date"]:focus::-webkit-datetime-edit { color: #222; }
 
+  /* Floating label for date inputs */
+  .date-field { position: relative; margin-bottom: 8px; }
+  .date-field input[type="date"] {
+    width: 100%; padding: 10px; padding-top: 18px;
+    border-radius: 8px; border: 1px solid #ddd; font-size: 14px;
+    margin-bottom: 0;
+  }
+  .date-field input[type="date"]:focus {
+    outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+  }
+  .date-field label {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 14px; color: #aaa; pointer-events: none;
+    transition: all 0.2s ease;
+  }
+  .date-field input[type="date"]:focus ~ label,
+  .date-field input[type="date"]:valid ~ label {
+    top: 8px; font-size: 10px; color: #1a73e8;
+  }
+
   /* ===== Form Elements ===== */
   input, select, button, textarea {
     width: 100%; padding: 10px; margin-bottom: 8px;
@@ -199,8 +219,10 @@
   <input id="firstName" placeholder="First Name *">
   <input id="lastName" placeholder="Last Name (optional)">
   <input id="username" placeholder="Username (optional)">
-  <input id="dueDate" type="date" placeholder="mm/dd/yyyy">
-  <div class="hint">Format: MM/DD/YYYY</div>
+  <div class="date-field">
+    <input id="dueDate" type="date" required>
+    <label for="dueDate">Due Date</label>
+  </div>
   <button onclick="submitClient()">Add Client</button>
 </div>
 
@@ -242,8 +264,10 @@
     <input id="editUsername" type="text" placeholder="Username" disabled>
     <input id="editFirstName" placeholder="First Name *">
     <input id="editLastName" placeholder="Last Name (optional)">
-    <input id="editDueDate" type="date" placeholder="mm/dd/yyyy">
-    <div class="hint">Format: MM/DD/YYYY</div>
+    <div class="date-field">
+      <input id="editDueDate" type="date" required>
+      <label for="editDueDate">Due Date</label>
+    </div>
     <textarea id="editNotes" placeholder="Notes (optional)"></textarea>
     <div class="modal-actions">
       <button onclick="saveEdit()">Save Changes</button>
@@ -898,5 +922,5 @@
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a672f77bb9c7b1',t:'MTc4NjYxMDc4Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a67d17fd0bdd57',t:'MTc4NjYxMTE5OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
