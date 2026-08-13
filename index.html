@@ -163,7 +163,7 @@
 <!-- Top Bar -->
 <div class="topbar">
   <h1>📡 Bantog ISP</h1>
-  <div class="status-pill" id="statusPill" onclick="manualSync()">
+  <div class="status-pill" id="statusPill">
     <span class="dot"></span>
     <span id="statusText">Checking...</span>
     <span class="pending-badge" id="pendingBadge" style="display:none;">0</span>
@@ -354,15 +354,23 @@
     }
   }
 
-  window.addEventListener('online', () => {
+  window.addEventListener('online', async () => {
     updateOnlineStatus();
-    showToast('Back online! Syncing...');
-    manualSync();
+    showToast('Back online! Auto-syncing...');
+    await autoSync();
   });
 
   window.addEventListener('offline', () => {
     updateOnlineStatus();
-    showToast('You are offline. Changes will sync later.');
+    showToast('📴 You are offline. Changes will sync later.');
+  });
+
+  // Auto-sync when app comes back into focus
+  document.addEventListener('visibilitychange', async () => {
+    if (!document.hidden && navigator.onLine) {
+      debugLog('App focused — checking for sync');
+      await autoSync();
+    }
   });
 
   // ==================== Toast ====================
@@ -374,6 +382,33 @@
   }
 
   // ==================== Sync ====================
+  let syncInProgress = false;
+
+  async function autoSync() {
+    if (syncInProgress || !navigator.onLine) return;
+    syncInProgress = true;
+
+    try {
+      const pill = document.getElementById('statusPill');
+      pill.className = 'status-pill syncing';
+      document.getElementById('statusText').textContent = 'Syncing...';
+
+      const result = await fullSync();
+      debugLog('Auto-sync result:', result);
+
+      if (result.pulled) {
+        loadSummary();
+        updatePendingBadge();
+      }
+    } catch (err) {
+      debugLog('Auto-sync error:', err);
+    }
+
+    syncInProgress = false;
+    updateOnlineStatus();
+    updatePendingBadge();
+  }
+
   async function manualSync() {
     const btn = document.getElementById('syncBtn');
     const pill = document.getElementById('statusPill');
@@ -669,39 +704,18 @@
     updateOnlineStatus();
     loadSummary();
 
-    // Initial sync if online
+    // Auto-sync on startup
     if (navigator.onLine) {
-      try {
-        showToast('Syncing with server...', 3000);
-        const result = await fullSync();
-        debugLog('Init sync result:', result);
-
-        if (result.pulled) {
-          showToast('✅ ' + result.pullCount + ' clients loaded!', 2000);
-        } else {
-          showToast('⚠️ Sync issue: ' + (result.pullReason || 'check console'), 3000);
-        }
-
-        loadSummary();
-      } catch (err) {
-        debugLog('Initial sync failed:', err);
-        showToast('❌ Initial sync failed', 2000);
-      }
-    } else {
-      showToast('📴 Offline — using cached data', 2000);
+      await autoSync();
     }
     updatePendingBadge();
 
-    // Periodic sync every 5 minutes
+    // Auto-sync every 2 minutes when online
     setInterval(async () => {
       if (navigator.onLine) {
-        try {
-          await fullSync();
-          loadSummary();
-          updatePendingBadge();
-        } catch (err) {}
+        await autoSync();
       }
-    }, 5 * 60 * 1000);
+    }, 2 * 60 * 1000);
   }
 
   // ==================== Debug Panel ====================
@@ -782,5 +796,5 @@
   init();
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a4ecf8fba53424',t:'MTc4NjU5NDgwOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a50c988c90cb79',t:'MTc4NjU5NjEwNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
