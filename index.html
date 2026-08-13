@@ -371,7 +371,21 @@
   // ==================== Service Worker ====================
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
+      .then(reg => {
+        console.log('SW registered:', reg.scope);
+        // Check for updates every time the page loads
+        reg.update();
+        // Listen for new service worker
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated') {
+              debugLog('New SW activated — reloading page');
+              window.location.reload();
+            }
+          });
+        });
+      })
       .catch(err => console.error('SW registration failed:', err));
   }
 
@@ -1028,7 +1042,7 @@
         }
       }
 
-      // Unregister service worker
+      // Unregister ALL service workers
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (const reg of registrations) {
@@ -1037,7 +1051,17 @@
         }
       }
 
-      el.textContent += '\n✅ Cache cleared! Please close and reopen the app.\n';
+      // Clear IndexedDB too (optional - keeps your local data)
+      // await indexedDB.deleteDatabase('BantogISP');
+
+      el.textContent += '\n✅ Cache cleared!\n';
+      el.textContent += 'Closing app in 2 seconds...\n';
+
+      // Force reload after a short delay
+      setTimeout(() => {
+        window.location.reload(true);
+      }, 2000);
+
     } catch (err) {
       el.textContent += 'Error: ' + err.message + '\n';
     }
@@ -1045,5 +1069,5 @@
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a6a3ff1f9902b6',t:'MTc4NjYxMjc5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a6b133ffb0095e',t:'MTc4NjYxMzMzMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
