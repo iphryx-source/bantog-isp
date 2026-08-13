@@ -4,7 +4,7 @@
 // Replace API_URL with your deployed Apps Script web app URL
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbwsZq13QZHLaklJvCcOoShyhc6dPE4NQWYo33gO2qqI_5JoCFraFani4CkmX1yMHKLNOQ/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 // Debug mode — set to true to see detailed logs in console
 const DEBUG = true;
@@ -533,6 +533,37 @@ async function getClientByUsername(username) {
     };
   }
   return null;
+}
+
+// ---- Delete client ----
+async function deleteClientAPI(username) {
+  if (isOnline()) {
+    try {
+      const result = await fetchGAS(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'deleteClient', username })
+      });
+
+      if (result.success) {
+        await dbDelete('clients', username);
+      }
+      return result;
+    } catch (err) {
+      debugLog('Online deleteClient failed:', err.message);
+    }
+  }
+
+  // Offline: remove locally and queue
+  await dbDelete('clients', username);
+
+  await dbPut('pendingActions', {
+    type: 'deleteClient',
+    data: { username },
+    timestamp: new Date().toISOString()
+  });
+
+  return { success: true, message: 'Client deleted (offline). Will sync when online.' };
 }
 
 // ==================== Sync Engine ====================
