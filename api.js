@@ -4,7 +4,7 @@
 // Replace API_URL with your deployed Apps Script web app URL
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbwsZq13QZHLaklJvCcOoShyhc6dPE4NQWYo33gO2qqI_5JoCFraFani4CkmX1yMHKLNOQ/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 // Debug mode — set to true to see detailed logs in console
 const DEBUG = true;
@@ -224,6 +224,8 @@ async function computeSummaryFromLocal() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const DUE_SOON_DAYS = 7;
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
 
   let dueToday = 0, dueSoon = 0, pastDue = 0, totalCollected = 0;
   let paidCount = 0, toCollectCount = 0, totalClients = 0;
@@ -243,27 +245,35 @@ async function computeSummaryFromLocal() {
       if (!isNaN(due.getTime())) {
         due.setHours(0, 0, 0, 0);
 
-        // Get first day of the month when due date falls
+        // Check if client was added before this month
+        let addedBeforeThisMonth = false;
+        if (c.installDate) {
+          const install = new Date(c.installDate + 'T00:00:00');
+          if (!isNaN(install.getTime())) {
+            const installMonth = install.getMonth();
+            const installYear = install.getFullYear();
+            addedBeforeThisMonth = (installYear < currentYear) || (installYear === currentYear && installMonth < currentMonth);
+          }
+        }
+
+        // Get first day of the due month
         const dueMonthStart = new Date(due.getFullYear(), due.getMonth(), 1);
         dueMonthStart.setHours(0, 0, 0, 0);
 
+        // Count in "To Collect" if:
+        // 1. Added before this month (existing client), OR
+        // 2. We've reached the first day of the due month
+        if (addedBeforeThisMonth || today >= dueMonthStart) {
+          toCollectCount++;
+        }
+
+        // Status counts
         if (due < today) {
           pastDue++;
-          toCollectCount++;
         } else if (due.getTime() === today.getTime()) {
           dueToday++;
-          toCollectCount++;
         } else if (due <= new Date(today.getTime() + DUE_SOON_DAYS * 86400000)) {
           dueSoon++;
-          // Check if we're already in the due month
-          if (today >= dueMonthStart) {
-            toCollectCount++;
-          }
-        } else {
-          // Future due date - only count in toCollect if we're in the due month
-          if (today >= dueMonthStart) {
-            toCollectCount++;
-          }
         }
       }
     }
