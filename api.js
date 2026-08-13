@@ -4,7 +4,7 @@
 // Replace API_URL with your deployed Apps Script web app URL
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbwsZq13QZHLaklJvCcOoShyhc6dPE4NQWYo33gO2qqI_5JoCFraFani4CkmX1yMHKLNOQ/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 // Debug mode — set to true to see detailed logs in console
 const DEBUG = true;
@@ -226,14 +226,19 @@ async function computeSummaryFromLocal() {
   const DUE_SOON_DAYS = 7;
 
   let dueToday = 0, dueSoon = 0, pastDue = 0, totalCollected = 0;
+  let paidCount = 0, toCollectCount = 0, totalClients = 0;
 
   for (const c of clients) {
     const balance = (c.amountDue || 0) - (c.amountPaid || 0);
+    totalClients++;
+    totalCollected += c.amountPaid || 0;
+
     if (balance <= 0) {
-      totalCollected += c.amountPaid || 0;
+      paidCount++;
       continue;
     }
 
+    toCollectCount++;
     if (c.dueDate) {
       const due = new Date(c.dueDate);
       due.setHours(0, 0, 0, 0);
@@ -241,10 +246,11 @@ async function computeSummaryFromLocal() {
       else if (due > today && due <= new Date(today.getTime() + DUE_SOON_DAYS * 86400000)) dueSoon++;
       else if (due < today) pastDue++;
     }
-    totalCollected += c.amountPaid || 0;
   }
 
-  return { dueToday, dueSoon, pastDue, totalCollected };
+  const collectionRate = totalClients > 0 ? Math.round((paidCount / totalClients) * 100) : 0;
+
+  return { dueToday, dueSoon, pastDue, totalCollected, paidCount, toCollectCount, totalClients, collectionRate };
 }
 
 // ---- Search/filter from local DB ----
