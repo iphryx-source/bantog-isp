@@ -699,7 +699,6 @@
       html += '<div class="rc-name">' + esc(c.clientName) + '</div>';
       html += '<div class="rc-username">@' + esc(c.username) + '</div>';
       html += '</div>';
-      html += '<button class="secondary" onclick="openEdit(\'' + jsesc(c.username) + '\')">✏️ Edit</button>';
       html += '</div>';
       html += '<div class="rc-meta">Due: ' + fmtDate(dueStr) + ' | Added: ' + fmtDate(c.createdDate) + '</div>';
       
@@ -725,6 +724,7 @@
         html += '<div class="rc-meta" style="color:#274e13;margin-top:4px;">✓ Fully paid</div>';
       }
 
+      html += '<button class="secondary" onclick="openEdit(\'' + jsesc(c.username) + '\')" style="width:100%;margin-top:8px;">✏️ Edit</button>';
       html += '</div>';
     }
     box.innerHTML = html;
@@ -1130,5 +1130,5 @@
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a787a00f4737d3',t:'MTc4NjYyMjExNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a78dc00ae1848e',t:'MTc4NjYyMjM2Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
