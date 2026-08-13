@@ -318,6 +318,7 @@
     <div id="debugContent" style="font-size:12px; font-family:monospace; white-space:pre-wrap; background:#f5f5f5; padding:10px; border-radius:6px; max-height:300px; overflow-y:auto;">Loading...</div>
     <div class="modal-actions">
       <button onclick="debugForceSync()">Force Sync</button>
+      <button onclick="clearCache()" style="background:#ea4335;">Clear Cache</button>
       <button class="secondary" onclick="document.getElementById('debugModal').classList.remove('active')">Close</button>
     </div>
   </div>
@@ -430,14 +431,31 @@
     }
   });
 
-  // Connectivity heartbeat — check every 30 seconds
+  // Connectivity heartbeat — check every 3 minutes
   // This catches cases where online/offline events don't fire
   setInterval(async () => {
+    if (syncInProgress) return; // Skip if already syncing
+
     if (navigator.onLine) {
-      await autoSync();
+      // Only sync if we haven't synced recently (check last sync time)
+      try {
+        const status = await getSyncStatus();
+        const lastSync = status.lastSync ? new Date(status.lastSync) : null;
+        const now = new Date();
+        const timeSinceSync = lastSync ? (now - lastSync) / 1000 : 999999;
+
+        // Only auto-sync if last sync was more than 2 minutes ago
+        if (timeSinceSync > 120) {
+          debugLog('Heartbeat: last sync was ' + Math.round(timeSinceSync) + 's ago, syncing...');
+          await autoSync();
+        } else {
+          debugLog('Heartbeat: synced ' + Math.round(timeSinceSync) + 's ago, skipping');
+        }
+      } catch (err) {
+        debugLog('Heartbeat error:', err);
+      }
     } else {
       // Try to detect if we're actually back online
-      // by pinging a lightweight endpoint
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -458,7 +476,7 @@
         // Still offline
       }
     }
-  }, 30 * 1000); // Every 30 seconds
+  }, 3 * 60 * 1000); // Every 3 minutes
 
   // ==================== Toast ====================
   function showToast(msg, duration = 2500) {
@@ -470,9 +488,17 @@
 
   // ==================== Sync ====================
   let syncInProgress = false;
+  let lastSyncAttempt = 0;
 
   async function autoSync() {
-    if (syncInProgress || !navigator.onLine) return;
+    // Prevent concurrent syncs and too-frequent attempts
+    const now = Date.now();
+    if (syncInProgress || !navigator.onLine || (now - lastSyncAttempt < 30000)) {
+      debugLog('Skipping autoSync: ' + (syncInProgress ? 'already syncing' : !navigator.onLine ? 'offline' : 'too soon'));
+      return;
+    }
+
+    lastSyncAttempt = now;
     syncInProgress = true;
 
     try {
@@ -978,7 +1004,36 @@
     }
   }
 
+  async function clearCache() {
+    const el = document.getElementById('debugContent');
+    el.textContent += '\n\n--- Clearing Cache ---\n';
+
+    try {
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (const name of cacheNames) {
+          await caches.delete(name);
+          el.textContent += 'Deleted cache: ' + name + '\n';
+        }
+      }
+
+      // Unregister service worker
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+          el.textContent += 'Unregistered SW: ' + reg.scope + '\n';
+        }
+      }
+
+      el.textContent += '\n✅ Cache cleared! Please close and reopen the app.\n';
+    } catch (err) {
+      el.textContent += 'Error: ' + err.message + '\n';
+    }
+  }
+
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a685925cebceec',t:'MTc4NjYxMTU0NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a69702396f0cd6',t:'MTc4NjYxMjI2MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
