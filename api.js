@@ -585,6 +585,10 @@ async function processPendingActions() {
   let synced = 0;
   for (const action of actions) {
     try {
+      // DELETE the action FIRST to prevent duplicate processing
+      await dbDelete('pendingActions', action.id);
+      debugLog('Processing pending action:', action.type, action.id);
+
       const result = await fetchGAS(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
@@ -592,11 +596,17 @@ async function processPendingActions() {
       });
 
       if (result.success) {
-        await dbDelete('pendingActions', action.id);
         synced++;
+        debugLog('Synced action:', action.type);
+      } else {
+        // If failed, re-queue the action
+        debugLog('Action failed, re-queuing:', action.type, result.message);
+        await dbPut('pendingActions', action);
       }
     } catch (err) {
-      debugLog('Sync action failed:', err.message);
+      debugLog('Sync action failed, re-queuing:', err.message);
+      // Re-queue on network error
+      await dbPut('pendingActions', action);
       break;
     }
   }
